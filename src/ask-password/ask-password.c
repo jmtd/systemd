@@ -31,6 +31,7 @@
 static const char *arg_icon = NULL;
 static const char *arg_id = NULL;
 static const char *arg_keyname = NULL;
+static const usec_t arg_key_expiry = KEYRING_TIMEOUT_USEC;
 static char *arg_message = NULL;
 static usec_t arg_timeout = DEFAULT_TIMEOUT_USEC;
 static bool arg_multiple = false;
@@ -44,6 +45,7 @@ static void help(void) {
                "     --icon=NAME      Icon name\n"
                "     --id=ID          Query identifier (e.g. \"cryptsetup:/dev/sda5\")\n"
                "     --keyname=NAME   Kernel key name for caching passwords (e.g. \"cryptsetup\")\n"
+               "     --key-expiry=SEC Expiry time for cached password in kernel keyring\n"
                "     --timeout=SEC    Timeout in seconds\n"
                "     --echo           Do not mask input (useful for usernames)\n"
                "     --no-tty         Ask question via agent even on TTY\n"
@@ -65,6 +67,7 @@ static int parse_argv(int argc, char *argv[]) {
                 ARG_ID,
                 ARG_KEYNAME,
                 ARG_NO_OUTPUT,
+                ARG_KEY_EXPIRY,
         };
 
         static const struct option options[] = {
@@ -78,6 +81,7 @@ static int parse_argv(int argc, char *argv[]) {
                 { "id",            required_argument, NULL, ARG_ID            },
                 { "keyname",       required_argument, NULL, ARG_KEYNAME       },
                 { "no-output",     no_argument,       NULL, ARG_NO_OUTPUT     },
+                { "key-expiry",    required_argument, NULL, ARG_KEY_EXPIRY    },
                 {}
         };
 
@@ -133,6 +137,13 @@ static int parse_argv(int argc, char *argv[]) {
                         arg_no_output = true;
                         break;
 
+                case ARG_KEY_EXPIRY:
+                        if (parse_sec(optarg, &arg_key_expiry) < 0) {
+                                log_error("Failed to parse --key-expiry parameter %s", optarg);
+                                return -EINVAL;
+                        }
+                        break;
+
                 case '?':
                         return -EINVAL;
 
@@ -167,7 +178,7 @@ int main(int argc, char *argv[]) {
         else
                 timeout = 0;
 
-        r = ask_password_auto(arg_message, arg_icon, arg_id, arg_keyname, timeout, arg_flags, &l);
+        r = ask_password_auto(arg_message, arg_icon, arg_id, arg_keyname, timeout, arg_flags, &l, arg_key_expiry);
         if (r < 0) {
                 log_error_errno(r, "Failed to query password: %m");
                 goto finish;

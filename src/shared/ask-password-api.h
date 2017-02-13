@@ -23,6 +23,8 @@
 
 #include "time-util.h"
 
+#define KEYRING_TIMEOUT_USEC ((5 * USEC_PER_MINUTE) / 2)
+
 typedef enum AskPasswordFlags {
         ASK_PASSWORD_ACCEPT_CACHED = 1,
         ASK_PASSWORD_PUSH_CACHE = 2,

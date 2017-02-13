@@ -60,8 +60,6 @@
 #include "utf8.h"
 #include "util.h"
 
-#define KEYRING_TIMEOUT_USEC ((5 * USEC_PER_MINUTE) / 2)
-
 static int lookup_key(const char *keyname, key_serial_t *ret) {
         key_serial_t serial;
 
@@ -205,7 +203,8 @@ int ask_password_tty(
                 usec_t until,
                 AskPasswordFlags flags,
                 const char *flag_file,
-                char **ret) {
+                char **ret,
+                usec_t expiry) {
 
         struct termios old_termios, new_termios;
         char passphrase[LINE_MAX + 1] = {}, *x;
@@ -697,6 +696,7 @@ int ask_password_auto(
                 const char *keyname,
                 usec_t until,
                 AskPasswordFlags flags,
+                usec_t expiry,
                 char ***ret) {
 
         int r;
@@ -712,7 +712,7 @@ int ask_password_auto(
         if (!(flags & ASK_PASSWORD_NO_TTY) && isatty(STDIN_FILENO)) {
                 char *s = NULL, **l = NULL;
 
-                r = ask_password_tty(message, keyname, until, flags, NULL, &s);
+                r = ask_password_tty(message, keyname, until, flags, NULL, &s, expiry);
                 if (r < 0)
                         return r;
 
